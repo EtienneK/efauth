@@ -5,7 +5,6 @@
 /// <reference lib="deno.ns" />
 
 import "$std/dotenv/load.ts";
-import "./oidc-server.ts";
 
 import { start } from "$fresh/server.ts";
 import manifest from "./fresh.gen.ts";
