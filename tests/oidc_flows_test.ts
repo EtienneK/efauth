@@ -3,7 +3,7 @@ import manifest from "../fresh.gen.ts";
 import config from "../fresh.config.ts";
 import { assert, assertEquals } from "@std/assert";
 
-Deno.test("HTTP assert test.", async (t) => {
+Deno.test("OIDC tests", async (t) => {
   const handler = await createHandler(manifest, config);
 
   await t.step("GET .well-known/openid-configuration", async () => {
@@ -16,7 +16,7 @@ Deno.test("HTTP assert test.", async (t) => {
     );
   });
 
-  await t.step("#2 POST /", async () => {
+  await t.step("POST /token", async () => {
     const body = new URLSearchParams({
       grant_type: "authorization_code",
       code: "this_is_an_invalid_code",
