@@ -17,20 +17,25 @@ Deno.test("HTTP assert test.", async (t) => {
   });
 
   await t.step("#2 POST /", async () => {
-    const formData = new FormData();
-    formData.append("text", "Deno!");
-    const req = new Request("http://127.0.0.1/", {
-      method: "POST",
-      body: formData,
-    });
-    const resp = await handler(req, CONN_INFO);
-    assertEquals(resp.status, 303);
-  });
+    const body = new URLSearchParams({
+      grant_type: "authorization_code",
+      code: "this_is_an_invalid_code",
+    }).toString();
 
-  await t.step("#3 GET /foo", async () => {
-    const resp = await handler(new Request("http://127.0.0.1/foo"), CONN_INFO);
-    const text = await resp.text();
-    assert(text.includes("<div>Hello Foo!</div>"));
+    const resp = await tfetch("/api/oidc/token", {
+      method: "POST",
+      body,
+      headers: {
+        "Authorization": "Basic " + btoa("foo:bar"),
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Length": body.length + "",
+      },
+    });
+
+    assertEquals(resp.status, 400);
+    const respJson = await resp.json();
+    assertEquals(respJson.error, "invalid_grant");
+    assertEquals(respJson.error_description, "grant request is invalid");
   });
 });
 

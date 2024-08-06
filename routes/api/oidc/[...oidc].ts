@@ -35,16 +35,14 @@ export type NodeRequest = {
   url: string | null;
   socket: {
     encrypted: boolean;
-    // address(): {
-    //   addr: null | {
-    //     address: string;
-    //   };
-    // };
   };
-  // on(
-  //   method: "data" | "error" | "end",
-  //   listener: (arg: Uint8Array | Error | undefined) => void,
-  // ): void;
+  on(
+    method: "data" | "error" | "end",
+    listener: (arg: Uint8Array | Error | undefined) => void,
+  ): void;
+  readable: boolean;
+  removeListener: () => void;
+  length: number;
 };
 
 export type NodeResponse = {
@@ -55,8 +53,6 @@ export type NodeResponse = {
   getHeader(key: string): string | null;
   removeHeader(key: string): void;
 
-  // write(chunk: unknown, callback?: (err: Error | null) => void): void;
-  // writeHead(status: number, statusText?: string): void;
   statusCode: number;
 };
 
@@ -74,6 +70,7 @@ export const handler = async (
 
   // Request
   const reqUrl = new URL(req.url);
+  const reqBodyBytes = await req.bytes();
   const nodeRequest: NodeRequest = {
     headers,
     method: req.method,
@@ -82,6 +79,16 @@ export const handler = async (
     socket: {
       encrypted: reqUrl.protocol.includes("https"),
     },
+    on: function (
+      method: "data" | "error" | "end",
+      listener: (arg?: Uint8Array | Error) => void,
+    ): void {
+      if (method === "data") listener(reqBodyBytes);
+      if (method === "end") listener();
+    },
+    removeListener: () => {},
+    readable: true,
+    length: reqBodyBytes.length,
   };
 
   // Response
