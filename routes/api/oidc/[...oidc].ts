@@ -1,52 +1,44 @@
 import { FreshContext } from "$fresh/server.ts";
-
-// @ts-types="npm:@types/oidc-provider"
-import Provider from "oidc-provider";
-
-// ===================================================================================
-// OIDC
-
-const configuration = {
-  // refer to the documentation for other available configuration
-  clients: [{
-    client_id: "foo",
-    client_secret: "bar",
-    redirect_uris: ["http://lvh.me:8080/cb"],
-    // ... other client properties
-  }],
-};
-
-export const oidc = new Provider("http://localhost:8000", configuration);
-oidc.proxy = false; // TODO
-
-oidc.on("server_error", (_ctx, err) => {
-  console.error(err);
-});
+import { Readable } from "node:stream";
+import { oidc } from "../../../oidc/oidc.ts";
 
 const oidcCallback = oidc.callback();
 
 // ===================================================================================
 // Adapters
 
-export type NodeRequest = {
-  headers: Record<string, string>;
-  method: string | null;
-  originalUrl: string | null;
-  url: string | null;
-  socket: {
-    encrypted: boolean;
-  };
-  on(
-    method: "data" | "error" | "end",
-    listener: (arg: Uint8Array | Error | undefined) => void,
-  ): void;
-  readable: boolean;
-  removeListener: () => void;
-  length: number;
-};
+class NodeRequest extends Readable {
+  public headers: Record<string, string> = {};
+  public method: string | null;
+  public originalUrl: string | null;
+  public url: string | null;
+  public socket: { encrypted: boolean };
+  public length: number;
 
-export type NodeResponse = {
-  // destroy(error?: Error): void;
+  constructor(req: Request, reqBodyBytes: Uint8Array) {
+    super();
+
+    for (const entry of req.headers.entries()) {
+      this.headers[entry[0]] = entry[1];
+    }
+
+    this.method = req.method;
+
+    const reqUrl = new URL(req.url);
+    this.url = reqUrl.pathname.replace("/api/oidc", "") + reqUrl.search;
+    this.originalUrl = reqUrl.pathname + reqUrl.search;
+
+    this.socket = {
+      encrypted: reqUrl.protocol.includes("https"),
+    };
+
+    this.length = reqBodyBytes.length;
+    this.push(reqBodyBytes);
+    this.push(null);
+  }
+}
+
+type NodeResponse = {
   end(bodyText: string): void;
 
   setHeader(key: string, value: string): void;
@@ -63,33 +55,8 @@ export const handler = async (
   req: Request,
   _ctx: FreshContext,
 ): Promise<Response> => {
-  const headers: Record<string, string> = {};
-  for (const entry of req.headers.entries()) {
-    headers[entry[0]] = entry[1];
-  }
-
   // Request
-  const reqUrl = new URL(req.url);
-  const reqBodyBytes = await req.bytes();
-  const nodeRequest: NodeRequest = {
-    headers,
-    method: req.method,
-    url: reqUrl.pathname.replace("/api/oidc", "") + reqUrl.search,
-    originalUrl: reqUrl.pathname + reqUrl.search,
-    socket: {
-      encrypted: reqUrl.protocol.includes("https"),
-    },
-    on: function (
-      method: "data" | "error" | "end",
-      listener: (arg?: Uint8Array | Error) => void,
-    ): void {
-      if (method === "data") listener(reqBodyBytes);
-      if (method === "end") listener();
-    },
-    removeListener: () => {},
-    readable: true,
-    length: reqBodyBytes.length,
-  };
+  const nodeRequest = new NodeRequest(req, await req.bytes());
 
   // Response
   const resHeaders = new Headers();

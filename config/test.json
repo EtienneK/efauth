@@ -1,0 +1,14 @@
+{
+  "server": {
+    "baseUrl": "https://auth.example.com"
+  },
+  "oidc": {
+    "clients": [
+      {
+        "client_id": "foo",
+        "client_secret": "bar",
+        "redirect_uris": ["https://example.com"]
+      }
+    ]
+  }
+}

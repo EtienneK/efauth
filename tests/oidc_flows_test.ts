@@ -1,11 +1,10 @@
 import { createHandler, ServeHandlerInfo } from "$fresh/server.ts";
+import { assertEquals } from "@std/assert";
 import manifest from "../fresh.gen.ts";
 import config from "../fresh.config.ts";
-import { assert, assertEquals } from "@std/assert";
+import testConfig from "../config/test.json" with { type: "json" };
 
 Deno.test("OIDC tests", async (t) => {
-  const handler = await createHandler(manifest, config);
-
   await t.step("GET .well-known/openid-configuration", async () => {
     const res = await tfetch("/api/oidc/.well-known/openid-configuration");
     assertEquals(res.status, 200);
@@ -13,6 +12,26 @@ Deno.test("OIDC tests", async (t) => {
     assertEquals(
       body.authorization_endpoint,
       "http://auth.example.com/api/oidc/auth",
+    );
+    assertEquals(
+      body.issuer,
+      "https://auth.example.com/api/oidc",
+    );
+  });
+
+  await t.step("GET /auth", async () => {
+    const res = await tfetch(
+      `/api/oidc/auth?client_id=${testConfig.oidc.clients[0].client_id}`,
+    );
+    assertEquals(res.status, 200);
+    const body = await res.json();
+    assertEquals(
+      body.authorization_endpoint,
+      "http://auth.example.com/api/oidc/auth",
+    );
+    assertEquals(
+      body.issuer,
+      "https://auth.example.com/api/oidc",
     );
   });
 
@@ -26,7 +45,12 @@ Deno.test("OIDC tests", async (t) => {
       method: "POST",
       body,
       headers: {
-        "Authorization": "Basic " + btoa("foo:bar"),
+        "Authorization": "Basic " +
+          btoa(
+            `${testConfig.oidc.clients[0].client_id}:${
+              testConfig.oidc.clients[0].client_secret
+            }`,
+          ),
         "Content-Type": "application/x-www-form-urlencoded",
         "Content-Length": body.length + "",
       },
