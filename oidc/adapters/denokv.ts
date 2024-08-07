@@ -1,7 +1,7 @@
 // @ts-types="npm:@types/oidc-provider"
 import { Adapter, AdapterPayload } from "oidc-provider";
 
-const kv = await Deno.openKv("./.data/denokv.db");
+const kv = await Deno.openKv();
 
 const grantable = new Set([
   "AccessToken",
