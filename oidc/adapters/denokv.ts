@@ -39,18 +39,22 @@ export default class DenoKvAdapter implements Adapter {
 
     const atomic = kv.atomic();
 
-    atomic.set(key, payload, { expireIn });
+    atomic.set(key, payload, { expireIn: expireIn * 1000 });
 
     if (payload.grantId && grantable.has(this.name)) {
-      atomic.set(grantKeyFor(payload.grantId, id), id, { expireIn });
+      atomic.set(grantKeyFor(payload.grantId, id), id, {
+        expireIn: expireIn * 1000,
+      });
     }
 
     if (payload.userCode) {
-      atomic.set(userCodeKeyFor(payload.userCode), id, { expireIn });
+      atomic.set(userCodeKeyFor(payload.userCode), id, {
+        expireIn: expireIn * 1000,
+      });
     }
 
     if (payload.uid) {
-      atomic.set(uidKeyFor(payload.uid), id, { expireIn });
+      atomic.set(uidKeyFor(payload.uid), id, { expireIn: expireIn * 1000 });
     }
 
     await atomic.commit();
