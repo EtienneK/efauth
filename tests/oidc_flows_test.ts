@@ -27,7 +27,7 @@ Deno.test("OIDC tests", async (t) => {
     );
     assertEquals(res.status, 303);
     const location = res.headers.get("location");
-    assert(location?.includes("/api/oidc/interaction/"));
+    assert(location?.includes("/interactions/"));
   });
 
   await t.step("POST /token", async () => {

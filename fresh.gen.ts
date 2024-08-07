@@ -5,8 +5,9 @@
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
 import * as $api_oidc_oidc_ from "./routes/api/oidc/[...oidc].ts";
-import * as $greet_name_ from "./routes/greet/[name].tsx";
 import * as $index from "./routes/index.tsx";
+import * as $interactions_uid_index from "./routes/interactions/[uid]/index.tsx";
+import * as $interactions_uid_login from "./routes/interactions/[uid]/login.tsx";
 import * as $Counter from "./islands/Counter.tsx";
 import { type Manifest } from "$fresh/server.ts";
 
@@ -15,8 +16,9 @@ const manifest = {
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
     "./routes/api/oidc/[...oidc].ts": $api_oidc_oidc_,
-    "./routes/greet/[name].tsx": $greet_name_,
     "./routes/index.tsx": $index,
+    "./routes/interactions/[uid]/index.tsx": $interactions_uid_index,
+    "./routes/interactions/[uid]/login.tsx": $interactions_uid_login,
   },
   islands: {
     "./islands/Counter.tsx": $Counter,

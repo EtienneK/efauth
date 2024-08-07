@@ -1,7 +1,7 @@
 // @ts-types="npm:@types/oidc-provider"
 import { Adapter, AdapterPayload } from "oidc-provider";
 
-const kv = await Deno.openKv();
+const kv = await Deno.openKv("./.data/denokv.db");
 
 const grantable = new Set([
   "AccessToken",
@@ -78,7 +78,9 @@ export default class DenoKvAdapter implements Adapter {
   }
 
   async revokeByGrantId(grantId: string) {
-    const grantIndexEntries = kv.list<string>({ prefix: grantKeyPrefixFor(grantId) });
+    const grantIndexEntries = kv.list<string>({
+      prefix: grantKeyPrefixFor(grantId),
+    });
     const atomic = kv.atomic();
     for await (const grantIndexEntry of grantIndexEntries) {
       atomic.delete(this.key(grantIndexEntry.value));

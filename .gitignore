@@ -1,3 +1,6 @@
+# DBs
+.data/*.db*
+
 # Config
 config/local*
 
