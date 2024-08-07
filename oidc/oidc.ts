@@ -7,6 +7,18 @@ import DenoKvAdapter from "./adapters/denokv.ts";
 const configuration: Configuration = {
   adapter: DenoKvAdapter,
   clients: config.get("oidc.clients"),
+  // interactions: {
+  //   url(_ctx, interaction) {
+  //     return `/interactions/${interaction.uid}`;
+  //   },
+  // },
+  features: {
+    // devInteractions: { enabled: false },
+    pushedAuthorizationRequests: { enabled: false },
+    resourceIndicators: { enabled: false },
+    rpInitiatedLogout: { enabled: false },
+    userinfo: { enabled: false },
+  },
 };
 
 export const oidc = new Provider(config.get("oidc.issuer"), configuration);

@@ -41,7 +41,7 @@ class NodeRequest extends Readable {
 type NodeResponse = {
   end(bodyText: string): void;
 
-  setHeader(key: string, value: string): void;
+  setHeader(key: string, value: string | string[]): void;
   getHeader(key: string): string | null;
   removeHeader(key: string): void;
 
@@ -63,8 +63,14 @@ export const handler = async (
   let resBody: string | undefined = undefined;
   const nodeResponse: NodeResponse = {
     statusCode: 0,
-    setHeader: function (key: string, value: string): void {
-      resHeaders.set(key, value);
+    setHeader: function (key: string, value: string | string[]): void {
+      if (typeof value === "string") {
+        resHeaders.append(key, value);
+      } else {
+        for (const val of value) {
+          resHeaders.append(key, val);
+        }
+      }
     },
     end: function (bodyText: string): void {
       resBody = bodyText;

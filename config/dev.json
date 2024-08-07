@@ -1,0 +1,11 @@
+{
+  "oidc": {
+    "clients": [
+      {
+        "client_id": "local",
+        "client_secret": "local_secret",
+        "redirect_uris": ["https://auth.example.com"]
+      }
+    ]
+  }
+}

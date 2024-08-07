@@ -1,5 +1,5 @@
 import { createHandler, ServeHandlerInfo } from "$fresh/server.ts";
-import { assertEquals } from "@std/assert";
+import { assert, assertEquals } from "@std/assert";
 import manifest from "../fresh.gen.ts";
 import config from "../fresh.config.ts";
 import testConfig from "../config/test.json" with { type: "json" };
@@ -21,18 +21,13 @@ Deno.test("OIDC tests", async (t) => {
 
   await t.step("GET /auth", async () => {
     const res = await tfetch(
-      `/api/oidc/auth?client_id=${testConfig.oidc.clients[0].client_id}`,
+      `/api/oidc/auth?client_id=${
+        testConfig.oidc.clients[0].client_id
+      }&response_type=code&code_challenge=1234567890123456789012345678901234567890123&code_challenge_method=S256&scope=openid`,
     );
-    assertEquals(res.status, 200);
-    const body = await res.json();
-    assertEquals(
-      body.authorization_endpoint,
-      "http://auth.example.com/api/oidc/auth",
-    );
-    assertEquals(
-      body.issuer,
-      "https://auth.example.com/api/oidc",
-    );
+    assertEquals(res.status, 303);
+    const location = res.headers.get("location");
+    assert(location?.includes("/api/oidc/interaction/"));
   });
 
   await t.step("POST /token", async () => {
