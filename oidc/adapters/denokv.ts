@@ -2,8 +2,6 @@
 import { Adapter, AdapterPayload } from "oidc-provider";
 import DenoKvAdapter from "../../db/adapters/denokv.ts";
 
-const kv = await Deno.openKv();
-
 const grantable = new Set([
   "AccessToken",
   "AuthorizationCode",
@@ -44,22 +42,22 @@ export default class OidcDenoKvAdapter extends DenoKvAdapter<AdapterPayload>
   }
 
   async findByUid(uid: string) {
-    const id = await kv.get<string>(this.uidKeyFor(uid));
+    const id = await this.kv.get<string>(this.uidKeyFor(uid));
     if (!id.value) return undefined;
     return this.find(id.value);
   }
 
   async findByUserCode(userCode: string) {
-    const id = await kv.get<string>(this.userCodeKeyFor(userCode));
+    const id = await this.kv.get<string>(this.userCodeKeyFor(userCode));
     if (!id.value) return undefined;
     return this.find(id.value);
   }
 
   async revokeByGrantId(grantId: string) {
-    const grantIndexEntries = kv.list<string>({
+    const grantIndexEntries = this.kv.list<string>({
       prefix: this.grantKeyPrefixFor(grantId),
     });
-    const atomic = kv.atomic();
+    const atomic = this.kv.atomic();
     for await (const grantIndexEntry of grantIndexEntries) {
       atomic.delete(this.key(grantIndexEntry.value));
       atomic.delete(grantIndexEntry.key);
@@ -71,7 +69,7 @@ export default class OidcDenoKvAdapter extends DenoKvAdapter<AdapterPayload>
     const payload = await this.find(id);
     if (!payload) return;
     payload.consumed = Date.now() / 1000;
-    await kv.set(this.key(id), payload);
+    await this.kv.set(this.key(id), payload);
   }
 
   protected grantKeyPrefixFor(grantId: string) {

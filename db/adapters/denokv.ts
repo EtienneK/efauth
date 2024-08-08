@@ -1,16 +1,20 @@
 import { AbstractAdapter } from "./abstract.ts";
 
-const kv = await Deno.openKv();
+const _kv = await Deno.openKv();
 
 export default class DenoKvAdapter<T> extends AbstractAdapter<T> {
+  protected readonly kv = _kv;
+
   constructor(name: string, namespace: string) {
     super(name, namespace);
   }
 
-  async upsert(id: string, payload: T, expireIn: number) {
+  async upsert(id: string, payload: T, expireIn: number = -1) {
     const key = this.key(id);
-    const atomic = kv.atomic();
-    atomic.set(key, payload, { expireIn: expireIn * 1000 });
+    const atomic = this.kv.atomic();
+    atomic.set(key, payload, {
+      expireIn: expireIn >= 0 ? expireIn * 1000 : undefined,
+    });
     this.upsertBeforeCommit(atomic, id, payload, expireIn);
     await atomic.commit();
   }
@@ -24,11 +28,11 @@ export default class DenoKvAdapter<T> extends AbstractAdapter<T> {
   }
 
   async find(id: string) {
-    const data = await kv.get<T>(this.key(id));
+    const data = await this.kv.get<T>(this.key(id));
     return data.value ?? undefined;
   }
 
   async destroy(id: string) {
-    await kv.delete(this.key(id));
+    await this.kv.delete(this.key(id));
   }
 }
