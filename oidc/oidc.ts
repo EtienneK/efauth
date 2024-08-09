@@ -2,11 +2,21 @@
 import config from "config";
 // @ts-types="npm:@types/oidc-provider"
 import Provider, { Configuration } from "oidc-provider";
-import DenoKvAdapter from "./adapters/denokv.ts";
 import { Readable } from "node:stream";
+import db from "../db/db.ts";
 
 const configuration: Configuration = {
-  adapter: DenoKvAdapter,
+  findAccount: async (_ctx, sub, _token) => {
+    const found = await db.users.find(sub);
+    if (!found) return undefined;
+    return {
+      accountId: sub,
+      claims(_use, _scope, _claims, _rejected) {
+        return { sub };
+      },
+    };
+  },
+  adapter: db.oidc,
   clients: config.get("oidc.clients"),
   interactions: {
     url(_ctx, interaction) {
