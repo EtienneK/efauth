@@ -24,6 +24,7 @@
   "imports": {
     "$fresh/": "https://deno.land/x/fresh@1.6.8/",
     "$std/": "https://deno.land/std@0.216.0/",
+    "@denosaurs/argontwo": "jsr:@denosaurs/argontwo@^0.2.0",
     "@olli/kvdex": "jsr:@olli/kvdex@^2.0.1",
     "@preact/signals": "https://esm.sh/*@preact/signals@1.2.2",
     "@preact/signals-core": "https://esm.sh/*@preact/signals-core@1.5.1",
@@ -31,7 +32,6 @@
     "@tailwindcss/typography": "npm:@tailwindcss/typography@^0.5.14",
     "@trpc/client": "npm:@trpc/client@11.0.0-rc.477",
     "@trpc/server": "npm:@trpc/server@11.0.0-rc.477",
-    "argon2": "npm:argon2@^0.40.3",
     "config": "npm:config@^3.3.12",
     "daisyui": "npm:daisyui@^4.12.10",
     "nanoid": "npm:nanoid@^5.0.7",

@@ -1,10 +1,10 @@
-import type { AppRouter } from "./server/routes/app.ts";
+import type { InteractionsRouter } from "../server/routes/interactions.ts";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 import superjson from "superjson";
 
 export function newClient(url: string) {
-  return createTRPCClient<AppRouter>({
+  return createTRPCClient<InteractionsRouter>({
     links: [
       httpBatchLink({
         url,
@@ -15,7 +15,7 @@ export function newClient(url: string) {
 }
 
 const clientCache: { [key: string]: ReturnType<typeof newClient> } = {};
-export function client(url: string = "/api/trpc") {
+export function client(url: string) {
   let ret = clientCache[url];
   if (!ret) {
     ret = newClient(url);
@@ -24,5 +24,5 @@ export function client(url: string = "/api/trpc") {
   return ret;
 }
 
-export type AppRouterInput = inferRouterInputs<AppRouter>;
-export type AppRouterOutput = inferRouterOutputs<AppRouter>;
+export type InteractionsRouterInput = inferRouterInputs<InteractionsRouter>;
+export type InteractionsRouterOutput = inferRouterOutputs<InteractionsRouter>;

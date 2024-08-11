@@ -1,7 +1,11 @@
-import { FreshContext } from "$fresh/server.ts";
+import { FreshContext, PageProps } from "$fresh/server.ts";
 import { assert } from "$std/assert/assert.ts";
-import UsernamePassword from "../../../islands/UsernamePassword.tsx";
+import UsernamePassword from "../../../islands/interactions/UsernamePassword.tsx";
 import { NodeRequest, NodeResponse, oidc } from "../../../oidc/oidc.ts";
+
+interface Props {
+  uid: string;
+}
 
 export const handler = async (
   req: Request,
@@ -19,17 +23,17 @@ export const handler = async (
 
   assert(prompt.name === "login");
 
-  return await ctx.render();
+  return await ctx.render({ uid: ctx.params.uid });
 };
 
-export default function Login() {
+export default function Login(props: PageProps<Props>) {
   return (
-    <html className="bg-base-300">
+    <html className="bg-base-100">
       <div className="flex flex-row min-h-screen justify-center items-center p-5">
-        <div className="card bg-base-100 w-96 shadow-xl">
+        <div className="card bg-base-200 w-96 shadow-xl">
           <div className="card-body items-center text-center">
             <img src="/logo.svg" className="w-16 h-16" />
-            <UsernamePassword />
+            <UsernamePassword uid={props.data.uid} />
           </div>
         </div>
       </div>

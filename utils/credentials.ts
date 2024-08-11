@@ -1,4 +1,4 @@
-import * as argon2 from "argon2";
+import { hash as argon2Hash } from "@denosaurs/argontwo";
 import { nanoid } from "nanoid";
 
 export function secureRandom(): string {
@@ -6,12 +6,14 @@ export function secureRandom(): string {
 }
 
 export async function hash(password: string): Promise<string> {
-  return await argon2.hash(password);
+  return ""; // TODO
+  //return await argon2Hash(password);
 }
 
 export async function hashVerify(
   hashedPassword: string,
   presentedPassword: string,
 ): Promise<boolean> {
-  return await argon2.verify(hashedPassword, presentedPassword);
+  return false; // TODO
+  //return await argon2.verify(hashedPassword, presentedPassword);
 }

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure, router } from "../trpc.ts";
+import { createCallerFactory, publicProcedure, router } from "../trpc.ts";
 import db from "../../../db/db.ts";
 import { hashVerify } from "../../../utils/credentials.ts";
 import { NodeRequest, NodeResponse, oidc } from "../../../oidc/oidc.ts";
@@ -18,12 +18,12 @@ export const interactionsRouter = router({
       }
 
       // TODO
-      // if (!(await hashVerify(user.password, password))) {
-      //   console.log(user.password);
-      //   console.log(password);
+      if (!(await hashVerify(user.password, password))) {
+        console.log(user.password);
+        console.log(password);
 
-      //   return undefined;
-      // }
+        return undefined;
+      }
 
       const result = {
         login: {
@@ -44,3 +44,6 @@ export const interactionsRouter = router({
       return { redirectTo };
     }),
 });
+
+export type InteractionsRouter = typeof interactionsRouter;
+export const callerFactory = createCallerFactory(interactionsRouter);
