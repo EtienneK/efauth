@@ -35,10 +35,11 @@ class KvDexDbAdapter<T> implements DbAdapter<T> {
     payload: T,
     expireIn: number = -1,
   ): Promise<void> {
-    await this.collection.set(id, payload, {
-      overwrite: true,
-      expireIn: expireIn >= 0 ? expireIn * 1000 : undefined,
-    });
+    await this.collection.upsert(
+      // deno-lint-ignore no-explicit-any
+      { id, set: payload, update: payload as any },
+      { expireIn: expireIn >= 0 ? expireIn * 1000 : undefined },
+    );
   }
 
   async find(id: string): Promise<T & WithId | undefined> {
@@ -115,19 +116,19 @@ class OidcDenoKvDbAdapter implements DbAdapter<AdapterPayload> {
 
     if (payload.grantId && grantable.has(this.name)) {
       atomic.set(this.grantKeyFor(payload.grantId, id), id, {
-        expireIn: expireIn * 1000,
+        expireIn: expireIn >= 0 ? expireIn * 1000 : undefined,
       });
     }
 
     if (payload.userCode) {
       atomic.set(this.userCodeKeyFor(payload.userCode), id, {
-        expireIn: expireIn * 1000,
+        expireIn: expireIn >= 0 ? expireIn * 1000 : undefined,
       });
     }
 
     if (payload.uid) {
       atomic.set(this.uidKeyFor(payload.uid), id, {
-        expireIn: expireIn * 1000,
+        expireIn: expireIn >= 0 ? expireIn * 1000 : undefined,
       });
     }
 

@@ -23,6 +23,43 @@ const configuration: Configuration = {
       return `/interactions/${interaction.uid}`;
     },
   },
+  async loadExistingGrant(ctx) {
+    // TODO: Implement consent or make it skippable based on config. For now, just skip it
+    // See: https://github.com/panva/node-oidc-provider/blob/main/recipes/skip_consent.md
+    const grantId = ctx.oidc.result?.consent?.grantId ||
+      ctx.oidc.session!.grantIdFor(ctx.oidc.client!.clientId);
+
+    if (grantId) {
+      // keep grant expiry aligned with session expiry
+      // to prevent consent prompt being requested when grant expires
+      const grant = await ctx.oidc.provider.Grant.find(grantId);
+
+      // this aligns the Grant ttl with that of the current session
+      // if the same Grant is used for multiple sessions, or is set
+      // to never expire, you probably do not want this in your code
+      if (ctx.oidc.account && grant!.exp! < ctx.oidc.session!.exp) {
+        grant!.exp = ctx.oidc.session!.exp;
+
+        await grant!.save();
+      }
+
+      return grant;
+    } /* if (isFirstParty(ctx.oidc.client)) */ else {
+      const grant = new ctx.oidc.provider.Grant({
+        clientId: ctx.oidc.client!.clientId,
+        accountId: ctx.oidc.session!.accountId,
+      });
+
+      grant.addOIDCScope("openid email profile");
+      grant.addOIDCClaims(["first_name"]);
+      grant.addResourceScope(
+        "urn:example:resource-indicator",
+        "api:read api:write",
+      );
+      await grant.save();
+      return grant;
+    }
+  },
   features: {
     backchannelLogout: { enabled: false },
     claimsParameter: { enabled: false },

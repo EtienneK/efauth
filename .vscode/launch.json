@@ -10,7 +10,9 @@
       "type": "node",
       "program": "${workspaceFolder}/dev.ts",
       "cwd": "${workspaceFolder}",
-      "env": {},
+      "env": {
+        "NODE_ENV": "dev"
+      },
       "runtimeExecutable": "/home/etk/.deno/bin/deno",
       "runtimeArgs": [
         "run",

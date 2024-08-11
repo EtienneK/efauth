@@ -17,11 +17,7 @@ export const interactionsRouter = router({
         return undefined;
       }
 
-      // TODO
       if (!(await hashVerify(user.password, password))) {
-        console.log(user.password);
-        console.log(password);
-
         return undefined;
       }
 
