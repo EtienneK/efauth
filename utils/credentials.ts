@@ -9,6 +9,8 @@ export function secureRandom(): string {
 }
 
 export function hash(password: string): Promise<string> {
+  // See: https://github.com/denosaurs/argontwo/blob/main/examples/phc.ts
+
   const encoder = new TextEncoder();
 
   // Store the salt and hash, this could be done with a PHC string or just as is.
@@ -35,6 +37,8 @@ export function hashVerify(
   hashedPassword: string,
   presentedPassword: string,
 ): Promise<boolean> {
+  // See: https://github.com/denosaurs/argontwo/blob/main/examples/phc.ts
+
   const encoder = new TextEncoder();
 
   // Deserializing the PHC string, probably directly fetched from a database in a real-life scenario
