@@ -1,4 +1,7 @@
 {
+  "server": {
+    "proxy": true
+  },
   "oidc": {
     "clients": [
       {

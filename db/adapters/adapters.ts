@@ -5,6 +5,7 @@ export interface WithId {
 }
 
 export interface DbAdapter<T> {
+  generateId(): string;
   upsert(id: string, payload: T): Promise<void>;
   upsert(id: string, payload: T, expireIn: number): Promise<void>;
   find(id: string): Promise<T & WithId | undefined>;

@@ -2,11 +2,11 @@ import { FreshContext, Handlers } from "$fresh/server.ts";
 import { NodeRequest, NodeResponse, oidc } from "../../../oidc/oidc.ts";
 
 export const handler: Handlers = {
-  async GET(req: Request, _ctx: FreshContext) {
+  async GET(req: Request, ctx: FreshContext) {
     const nodeRequest = new NodeRequest(req, await req.bytes());
     const nodeResponse = new NodeResponse();
 
-    const { uid, prompt } = await oidc.interactionDetails(
+    const { uid, prompt } = await oidc(ctx).provider.interactionDetails(
       // deno-lint-ignore no-explicit-any
       nodeRequest as any,
       // deno-lint-ignore no-explicit-any

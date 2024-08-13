@@ -6,22 +6,22 @@ import testConfig from "../config/test.json" with { type: "json" };
 
 Deno.test("OIDC tests", async (t) => {
   await t.step("GET .well-known/openid-configuration", async () => {
-    const res = await tfetch("/api/oidc/.well-known/openid-configuration");
+    const res = await tfetch("/oidc/.well-known/openid-configuration");
     assertEquals(res.status, 200);
     const body = await res.json();
     assertEquals(
       body.authorization_endpoint,
-      "http://auth.example.com/api/oidc/auth",
+      "http://auth.example.com/oidc/auth",
     );
     assertEquals(
       body.issuer,
-      "https://auth.example.com/api/oidc",
+      "http://auth.example.com/oidc",
     );
   });
 
   await t.step("GET /auth", async () => {
     const res = await tfetch(
-      `/api/oidc/auth?client_id=${
+      `/oidc/auth?client_id=${
         testConfig.oidc.clients[0].client_id
       }&response_type=code&code_challenge=1234567890123456789012345678901234567890123&code_challenge_method=S256&scope=openid`,
     );
@@ -36,14 +36,14 @@ Deno.test("OIDC tests", async (t) => {
       code: "this_is_an_invalid_code",
     }).toString();
 
-    const resp = await tfetch("/api/oidc/token", {
+    const resp = await tfetch("/oidc/token", {
       method: "POST",
       body,
       headers: {
         "Authorization": "Basic " +
           btoa(
-            `${testConfig.oidc.clients[0].client_id}:${
-              testConfig.oidc.clients[0].client_secret
+            `${encodeURIComponent(testConfig.oidc.clients[0].client_id)}:${
+              encodeURIComponent(testConfig.oidc.clients[0].client_secret)
             }`,
           ),
         "Content-Type": "application/x-www-form-urlencoded",

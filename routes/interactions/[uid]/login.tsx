@@ -14,7 +14,7 @@ export const handler = async (
   const nodeRequest = new NodeRequest(req, await req.bytes());
   const nodeResponse = new NodeResponse();
 
-  const { prompt } = await oidc.interactionDetails(
+  const { prompt } = await oidc(ctx).provider.interactionDetails(
     // deno-lint-ignore no-explicit-any
     nodeRequest as any,
     // deno-lint-ignore no-explicit-any

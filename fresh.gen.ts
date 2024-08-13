@@ -4,11 +4,15 @@
 
 import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
-import * as $api_oidc_oidc_ from "./routes/api/oidc/[...oidc].ts";
+import * as $_middleware from "./routes/_middleware.ts";
+import * as $admin_middleware from "./routes/admin/_middleware.ts";
+import * as $admin_api_oidc_callback from "./routes/admin/api/oidc/callback.tsx";
+import * as $admin_index from "./routes/admin/index.tsx";
 import * as $index from "./routes/index.tsx";
 import * as $interactions_uid_index from "./routes/interactions/[uid]/index.tsx";
 import * as $interactions_uid_login from "./routes/interactions/[uid]/login.tsx";
 import * as $interactions_uid_trpc_path_ from "./routes/interactions/[uid]/trpc/[...path].ts";
+import * as $oidc_oidc_ from "./routes/oidc/[...oidc].ts";
 import * as $Counter from "./islands/Counter.tsx";
 import * as $interactions_UsernamePassword from "./islands/interactions/UsernamePassword.tsx";
 import { type Manifest } from "$fresh/server.ts";
@@ -17,12 +21,16 @@ const manifest = {
   routes: {
     "./routes/_404.tsx": $_404,
     "./routes/_app.tsx": $_app,
-    "./routes/api/oidc/[...oidc].ts": $api_oidc_oidc_,
+    "./routes/_middleware.ts": $_middleware,
+    "./routes/admin/_middleware.ts": $admin_middleware,
+    "./routes/admin/api/oidc/callback.tsx": $admin_api_oidc_callback,
+    "./routes/admin/index.tsx": $admin_index,
     "./routes/index.tsx": $index,
     "./routes/interactions/[uid]/index.tsx": $interactions_uid_index,
     "./routes/interactions/[uid]/login.tsx": $interactions_uid_login,
     "./routes/interactions/[uid]/trpc/[...path].ts":
       $interactions_uid_trpc_path_,
+    "./routes/oidc/[...oidc].ts": $oidc_oidc_,
   },
   islands: {
     "./islands/Counter.tsx": $Counter,

@@ -1,15 +1,15 @@
-const os = require("os");
 const defer = require("config/defer").deferConfig;
-
-const hostname = os.hostname();
 
 module.exports = {
   server: {
-    baseUrl: `https://${hostname}`,
+    baseUrl: undefined,
     proxy: false,
   },
   oidc: {
-    issuer: defer((cfg) => `${cfg.server.baseUrl}/api/oidc`),
+    issuer: defer((cfg) => {
+      if (!cfg.server.baseUrl) return undefined;
+      return `${cfg.server.baseUrl}/oidc`;
+    }),
     clients: [],
   },
 };

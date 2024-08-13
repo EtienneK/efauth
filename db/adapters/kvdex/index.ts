@@ -1,15 +1,17 @@
 // @ts-types="npm:@types/oidc-provider"
-import { AdapterPayload } from "oidc-provider";
+import { Adapter, AdapterPayload } from "oidc-provider";
 import { type Collection, collection, kvdex, model } from "@olli/kvdex";
-import { AuthnSession, User } from "../../models/models.ts";
+import { AuthnSession, ClientSession, User } from "../../models/models.ts";
 import { DbAdapter, UsersDbAdapter, WithId } from "../adapters.ts";
 import { Db } from "../../db.ts";
+import { ulid } from "@std/ulid";
 
 const kv = await Deno.openKv();
 
 const db = kvdex(kv, {
   app: {
     authnSessions: collection(AuthnSession),
+    clientSessions: collection(ClientSession),
     users: collection(
       model((user: User) => ({
         ...user,
@@ -26,9 +28,17 @@ const db = kvdex(kv, {
   },
 });
 
+function _generateId(): string {
+  return ulid();
+}
+
 class KvDexDbAdapter<T> implements DbAdapter<T> {
   // deno-lint-ignore no-explicit-any
   constructor(private collection: Collection<T, any, any>) {}
+
+  generateId(): string {
+    return _generateId();
+  }
 
   async upsert(
     id: string,
@@ -100,7 +110,7 @@ const grantable = new Set([
   "BackchannelAuthenticationRequest",
 ]);
 
-class OidcDenoKvDbAdapter implements DbAdapter<AdapterPayload> {
+class OidcDenoKvDbAdapter implements Adapter {
   private namespace: string;
 
   constructor(private name: string) {
@@ -208,6 +218,7 @@ class OidcDenoKvDbAdapter implements DbAdapter<AdapterPayload> {
 
 const denokvDb: Db = {
   authnSessions: new KvDexDbAdapter(db.app.authnSessions),
+  clientSessions: new KvDexDbAdapter(db.app.clientSessions),
   users: new KvDexUsersDbAdapter(),
   oidc: OidcDenoKvDbAdapter,
 };

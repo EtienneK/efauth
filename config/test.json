@@ -1,7 +1,4 @@
 {
-  "server": {
-    "baseUrl": "https://auth.example.com"
-  },
   "oidc": {
     "clients": [
       {

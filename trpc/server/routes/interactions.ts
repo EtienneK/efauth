@@ -29,7 +29,7 @@ export const interactionsRouter = router({
 
       const nodeRequest = new NodeRequest(ctx.req, new Uint8Array([]));
       const nodeResponse = new NodeResponse();
-      const redirectTo = await oidc.interactionResult(
+      const redirectTo = await oidc().provider.interactionResult(
         // deno-lint-ignore no-explicit-any
         nodeRequest as any,
         // deno-lint-ignore no-explicit-any
