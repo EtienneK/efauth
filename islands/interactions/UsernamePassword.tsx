@@ -37,6 +37,9 @@ export default function UsernamePassword(props: UsernamePasswordProps) {
   return (
     <>
       <h2 className="card-title mt-2 mb-2">Welcome</h2>
+      <p>
+        Username / Password: admin / admin
+      </p>
 
       {error
         ? (
