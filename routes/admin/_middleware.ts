@@ -10,6 +10,8 @@ import { secureId } from "../../utils/crypto.ts";
 import { deleteCookie, getCookies, setCookie } from "@std/http/cookie";
 import { handler as oidcHandler } from "../oidc/[...oidc].ts";
 
+let as: oauth.AuthorizationServer | undefined = undefined;
+
 interface State {
   session: ClientSession & WithId;
 }
@@ -113,20 +115,52 @@ export const handler = [
     const oidcBundle = oidc(ctx as any);
     const issuer = new URL(oidcBundle.provider.issuer);
 
-    const ctxUrl = ctx.url;
-    ctx.url = new URL("/oidc/.well-known/openid-configuration", ctxUrl);
-    const discoveryRequestResponse = await oidcHandler(
-      new Request(ctx.url, {
-        headers: req.headers,
-      }),
-      ctx as any,
-    );
-    ctx.url = ctxUrl;
+    async function customFetch(
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ): Promise<Response> {
+      const fetchReq = new Request(input, init);
+      const ctxUrl = ctx.url;
+      ctx.url = new URL(new URL(fetchReq.url).pathname, ctxUrl);
 
-    const as = await oauth.processDiscoveryResponse(
-      issuer,
-      discoveryRequestResponse,
-    );
+      const oidcReqHeaders = new Headers();
+      fetchReq.headers.forEach((value, key) =>
+        oidcReqHeaders.append(key, value)
+      );
+      ["host", "x-forwarded-for", "x-forwarded-host", "x-forwarded-proto"]
+        .forEach((headerName) => {
+          if (req.headers.get(headerName)) {
+            oidcReqHeaders.set(headerName, req.headers.get(headerName)!);
+          }
+        });
+      if (fetchReq.body) {
+        oidcReqHeaders.set(
+          "content-length",
+          (await fetchReq.text()).length + "",
+        );
+      }
+
+      const oidcReq = new Request(ctx.url, {
+        ...init,
+        headers: oidcReqHeaders,
+      });
+
+      const response = await oidcHandler(oidcReq, ctx as any);
+      ctx.url = ctxUrl;
+      return response;
+    }
+
+    if (!as) {
+      const discoveryRequestResponse = await oauth.discoveryRequest(issuer, {
+        algorithm: "oidc",
+        [oauth.customFetch]: customFetch,
+      });
+
+      as = await oauth.processDiscoveryResponse(
+        issuer,
+        discoveryRequestResponse,
+      );
+    }
 
     const serverAdminClient =
       oidcBundle.configuration.clients!.filter((c) =>
@@ -154,6 +188,7 @@ export const handler = [
         params,
         redirectUri.href,
         ctx.state.session.code_verifier!,
+        { [oauth.customFetch]: customFetch },
       );
 
       let challenges: oauth.WWWAuthenticateChallenge[] | undefined;
