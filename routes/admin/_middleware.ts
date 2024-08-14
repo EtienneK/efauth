@@ -8,6 +8,7 @@ import db from "../../db/db.ts";
 import { WithId } from "../../db/adapters/adapters.ts";
 import { secureId } from "../../utils/crypto.ts";
 import { deleteCookie, getCookies, setCookie } from "@std/http/cookie";
+import { handler as oidcHandler } from "../oidc/[...oidc].ts";
 
 interface State {
   session: ClientSession & WithId;
@@ -99,7 +100,7 @@ export const handler = [
   },
 
   async function oidcAuthnMiddleware(
-    _req: Request,
+    req: Request,
     ctx: FreshContext<State>,
   ) {
     if (ctx.state.session.accountId) {
@@ -112,9 +113,20 @@ export const handler = [
     const oidcBundle = oidc(ctx as any);
     const issuer = new URL(oidcBundle.provider.issuer);
 
-    const as = await oauth
-      .discoveryRequest(issuer, { algorithm: "oidc" })
-      .then((response) => oauth.processDiscoveryResponse(issuer, response));
+    const ctxUrl = ctx.url;
+    ctx.url = new URL("/oidc/.well-known/openid-configuration", ctxUrl);
+    const discoveryRequestResponse = await oidcHandler(
+      new Request(ctx.url, {
+        headers: req.headers,
+      }),
+      ctx as any,
+    );
+    ctx.url = ctxUrl;
+
+    const as = await oauth.processDiscoveryResponse(
+      issuer,
+      discoveryRequestResponse,
+    );
 
     const serverAdminClient =
       oidcBundle.configuration.clients!.filter((c) =>
