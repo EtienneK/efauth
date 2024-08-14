@@ -6,6 +6,8 @@ import { NodeResponse } from "../../oidc/oidc.ts";
 import { ClientSession } from "../../db/models/models.ts";
 import db from "../../db/db.ts";
 import { WithId } from "../../db/adapters/adapters.ts";
+import { secureId } from "../../utils/crypto.ts";
+import { deleteCookie, getCookies, setCookie } from "@std/http/cookie";
 
 interface State {
   session: ClientSession & WithId;
@@ -24,37 +26,84 @@ export const handler = [
       nodeResponse as any,
     );
     const oidcSession = await oidc(ctx as any).provider.Session.get(koaCtx);
+    const isSignedIn = !!oidcSession.accountId;
 
-    if (!ctx.state.session) {
-      const id = oidcSession.uid + "|admin";
-      ctx.state.session = (await db.clientSessions.find(id)) ?? { id };
+    const cookieName = "_session_admin";
+    const clientSessionId: string | undefined =
+      getCookies(req.headers)[cookieName];
+    const oidcSessionId = isSignedIn ? oidcSession.jti + "_admin" : undefined;
+
+    let clientSessionToDelete: string | undefined = undefined;
+    let createCookie = true;
+    let sessionData: ClientSession & WithId = { id: secureId() };
+    if (!clientSessionId && !oidcSessionId) {
+      // Defaults above
+    } else if (clientSessionId && !oidcSessionId) {
+      const clientSession = await db.clientSessions.find(clientSessionId);
+      if (clientSession) {
+        sessionData = clientSession;
+        createCookie = false;
+      }
+    } else if (!clientSessionId && oidcSessionId) {
+      const clientSession = await db.clientSessions.find(oidcSessionId);
+      if (clientSession) {
+        sessionData = clientSession;
+        createCookie = false;
+      }
+    } else if (clientSessionId && oidcSessionId) {
+      const clientSession = await db.clientSessions.find(clientSessionId);
+      if (clientSession) {
+        sessionData = clientSession;
+        createCookie = false;
+        sessionData.id = oidcSessionId;
+        clientSessionToDelete = clientSessionId;
+      }
     }
-    console.log("----------------------------------------------------");
-    console.log("BEFORE:");
-    console.log(ctx.state.session);
+
+    ctx.state.session = sessionData;
 
     const response = await ctx.next();
+    const responseHeaders = new Headers();
+    response.headers.forEach((value, key) =>
+      responseHeaders.append(key, value)
+    );
 
+    const cookieOptions = {
+      path: "/admin",
+    };
+    if (createCookie) {
+      setCookie(responseHeaders, {
+        name: cookieName,
+        value: ctx.state.session.id,
+        ...cookieOptions,
+      });
+    }
+
+    if (clientSessionToDelete) {
+      deleteCookie(responseHeaders, cookieName, cookieOptions);
+      await db.clientSessions.destroy(clientSessionToDelete);
+    }
+
+    const expireAt = Math.floor(oidcSession.exp - (Date.now() / 1000));
     await db.clientSessions.upsert(
       ctx.state.session.id,
       ctx.state.session,
+      expireAt,
     );
 
-    console.log("----------------------------------------------------");
-    console.log("AFTER:");
-    console.log(ctx.state.session);
-
-    return response;
+    return new Response(response.body, {
+      headers: responseHeaders,
+      status: response.status,
+      statusText: response.statusText,
+    });
   },
 
   async function oidcAuthnMiddleware(
     _req: Request,
     ctx: FreshContext<State>,
   ) {
-    let { session } = ctx.state;
-
-    if (session.accountId) {
-      if (!session.isAdmin) {
+    if (ctx.state.session.accountId) {
+      if (!ctx.state.session.isAdmin) {
         return new Response("FORBIDDEN", { status: 403 }); // TODO
       }
       return ctx.next();
@@ -92,7 +141,7 @@ export const handler = [
         client,
         params,
         redirectUri.href,
-        session.code_verifier!,
+        ctx.state.session.code_verifier!,
       );
 
       let challenges: oauth.WWWAuthenticateChallenge[] | undefined;
@@ -114,9 +163,9 @@ export const handler = [
       }
       const claims = oauth.getValidatedIdTokenClaims(result);
 
-      const redirectTo = session.redirectTo!;
-      session = {
-        ...session,
+      const redirectTo = ctx.state.session.redirectTo!;
+      ctx.state.session = {
+        ...ctx.state.session,
         accountId: claims.sub,
         isAdmin: true, // TODO
       };
@@ -125,9 +174,9 @@ export const handler = [
     }
 
     const code_challenge_method = "S256";
-    session.code_verifier = oauth.generateRandomCodeVerifier();
+    ctx.state.session.code_verifier = oauth.generateRandomCodeVerifier();
     const code_challenge = await oauth.calculatePKCECodeChallenge(
-      session.code_verifier,
+      ctx.state.session.code_verifier,
     );
 
     const authorizationUrl = new URL(as.authorization_endpoint!);
@@ -141,7 +190,7 @@ export const handler = [
       code_challenge_method,
     );
 
-    session.redirectTo = ctx.url.href;
+    ctx.state.session.redirectTo = ctx.url.href;
     return Response.redirect(authorizationUrl);
   },
 ];

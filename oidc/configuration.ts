@@ -1,7 +1,7 @@
 // @ts-types="npm:@types/oidc-provider"
 import { ClientMetadata, Configuration } from "oidc-provider";
 import db from "../db/db.ts";
-import { secureRandom } from "../utils/credentials.ts";
+import { secureRandom } from "../utils/crypto.ts";
 import { config } from "../utils/config.ts";
 
 export function createConfiguration({ baseUrl }: { baseUrl: URL }) {

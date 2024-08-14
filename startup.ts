@@ -1,6 +1,5 @@
 import db from "./db/db.ts";
-import { hash } from "./utils/credentials.ts";
-import { secureRandom } from "./utils/credentials.ts";
+import { hash, secureId, secureRandom } from "./utils/crypto.ts";
 
 const adminUsername = "admin";
 const adminUser = await db.users.findByUsernameOrEmailCi(adminUsername);
@@ -8,7 +7,7 @@ const adminUser = await db.users.findByUsernameOrEmailCi(adminUsername);
 // TODO: Don't override admin user on each restart
 const adminEmail = "admin@example.com";
 const adminPassword = secureRandom();
-const adminId = adminUser?.id ?? secureRandom();
+const adminId = adminUser?.id ?? secureId();
 
 await db.users.upsert(adminId, {
   username: adminUsername,

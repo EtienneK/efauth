@@ -1,25 +1,61 @@
-// @ts-types="npm:@types/oidc-provider"
-import { Adapter, AdapterPayload } from "oidc-provider";
-import { type Collection, collection, kvdex, model } from "@olli/kvdex";
+import {
+  BuilderFn,
+  type Collection,
+  collection,
+  CollectionOptions,
+  kvdex,
+  model,
+} from "@olli/kvdex";
 import { AuthnSession, ClientSession, User } from "../../models/models.ts";
-import { DbAdapter, UsersDbAdapter, WithId } from "../adapters.ts";
-import { Db } from "../../db.ts";
-import { ulid } from "@std/ulid";
+import {
+  Db,
+  DbAdapter,
+  OidcAdapter,
+  OidcAdapterPayload,
+  UsersDbAdapter,
+  WithId,
+} from "../adapters.ts";
+import { z } from "zod";
 
 const kv = await Deno.openKv();
 
+const BaseModel = z.object({
+  __id: z.string(),
+});
+type BaseModel = z.infer<typeof BaseModel>;
+
+function genericCollection<
+  const TInput extends BaseModel,
+  const TOutput extends BaseModel = TInput,
+>(
+  transform?: (data: TInput) => TOutput,
+  options?: CollectionOptions<TOutput>,
+): BuilderFn<TInput, TOutput, CollectionOptions<TOutput>> {
+  options = {
+    ...options,
+    indices: {
+      ...options?.indices,
+      __id: "primary",
+    },
+    // deno-lint-ignore no-explicit-any
+  } as any;
+
+  return collection(model(transform), options);
+}
+
 const db = kvdex(kv, {
   app: {
-    authnSessions: collection(AuthnSession),
-    clientSessions: collection(ClientSession),
+    authnSessions: genericCollection<AuthnSession & BaseModel>(),
+    clientSessions: genericCollection<ClientSession & BaseModel>(),
     users: collection(
-      model((user: User) => ({
+      model((user: User & BaseModel) => ({
         ...user,
         usernameLowerCase: user.username.toLowerCase(),
         emailLowerCase: user.email.toLowerCase(),
       })),
       {
         indices: {
+          __id: "primary",
           usernameLowerCase: "primary",
           emailLowerCase: "primary",
         },
@@ -28,48 +64,48 @@ const db = kvdex(kv, {
   },
 });
 
-function _generateId(): string {
-  return ulid();
-}
-
 class KvDexDbAdapter<T> implements DbAdapter<T> {
-  // deno-lint-ignore no-explicit-any
-  constructor(private collection: Collection<T, any, any>) {}
-
-  generateId(): string {
-    return _generateId();
-  }
+  constructor(
+    // deno-lint-ignore no-explicit-any
+    private collection: Collection<T & BaseModel, any, any>,
+  ) {}
 
   async upsert(
     id: string,
     payload: T,
     expireIn: number = -1,
   ): Promise<void> {
-    await this.collection.upsert(
-      // deno-lint-ignore no-explicit-any
-      { id, set: payload, update: payload as any },
+    await this.collection.upsertByPrimaryIndex(
+      {
+        // deno-lint-ignore no-explicit-any
+        index: ["__id", id as any],
+        set: { ...payload, __id: id },
+        update: { ...payload } as any,
+      },
       { expireIn: expireIn >= 0 ? expireIn * 1000 : undefined },
     );
   }
 
   async find(id: string): Promise<T & WithId | undefined> {
-    const found = await this.collection.find(id);
+    // deno-lint-ignore no-explicit-any
+    const found = await this.collection.findByPrimaryIndex("__id", id as any);
     if (!found) return undefined;
     return {
       ...found.value,
-      id: found.id,
+      id,
     };
   }
 
   destroy(id: string): Promise<void> {
-    return this.collection.delete(id);
+    // deno-lint-ignore no-explicit-any
+    return this.collection.deleteByPrimaryIndex("__id", id as any);
   }
 }
 
 // ===========================================================================
 // Users
 
-class KvDexUsersDbAdapter extends KvDexDbAdapter<User>
+class KvDexUsersDbAdapter extends KvDexDbAdapter<User & BaseModel>
   implements UsersDbAdapter {
   constructor() {
     super(db.app.users);
@@ -94,7 +130,7 @@ class KvDexUsersDbAdapter extends KvDexDbAdapter<User>
 
     return {
       ...found.value,
-      id: found.id,
+      id: found.value.__id,
     };
   }
 }
@@ -110,14 +146,14 @@ const grantable = new Set([
   "BackchannelAuthenticationRequest",
 ]);
 
-class OidcDenoKvDbAdapter implements Adapter {
+class OidcDenoKvDbAdapter implements OidcAdapter {
   private namespace: string;
 
   constructor(private name: string) {
     this.namespace = "oidc";
   }
 
-  async upsert(id: string, payload: AdapterPayload, expireIn: number = -1) {
+  async upsert(id: string, payload: OidcAdapterPayload, expireIn: number = -1) {
     const key = this.key(id);
     const atomic = kv.atomic();
     atomic.set(key, payload, {
@@ -146,7 +182,7 @@ class OidcDenoKvDbAdapter implements Adapter {
   }
 
   async find(id: string) {
-    const data = await kv.get<AdapterPayload>(this.key(id));
+    const data = await kv.get<OidcAdapterPayload>(this.key(id));
     if (!data) return undefined;
 
     return {

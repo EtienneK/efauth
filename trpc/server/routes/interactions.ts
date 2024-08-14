@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createCallerFactory, publicProcedure, router } from "../trpc.ts";
 import db from "../../../db/db.ts";
-import { hashVerify } from "../../../utils/credentials.ts";
+import { hashVerify } from "../../../utils/crypto.ts";
 import { NodeRequest, NodeResponse, oidc } from "../../../oidc/oidc.ts";
 
 export const interactionsRouter = router({

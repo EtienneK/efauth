@@ -4,8 +4,15 @@ import phc from "npm:@phc/format";
 import { hash as argon2Hash } from "@denosaurs/argontwo";
 import { nanoid } from "nanoid";
 
-export function secureRandom(): string {
-  return nanoid();
+const bitsPerSymbol = Math.log2(64); // nanoid alphabet is 64 characters
+const tokenLength = (i: number) => Math.ceil(i / bitsPerSymbol);
+
+export function secureId() {
+  return secureRandom(128);
+}
+
+export function secureRandom(bitsOfOpaqueRandomness: number = 256): string {
+  return nanoid(tokenLength(bitsOfOpaqueRandomness));
 }
 
 export function hash(password: string): Promise<string> {
