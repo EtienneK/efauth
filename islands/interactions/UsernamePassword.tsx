@@ -40,7 +40,6 @@ export default function UsernamePassword(props: UsernamePasswordProps) {
         return;
       }
       window.location.href = result.redirectTo;
-      setLoading(false);
     } catch (err) {
       setLoading(false);
       console.error(err);
