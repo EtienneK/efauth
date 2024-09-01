@@ -38,7 +38,7 @@ export default function Login(props: PageProps<Props>) {
             height={64}
           />
           <h2 className="card-title mb-2">
-            Welcome
+            Welcome!
           </h2>
           <UsernamePassword uid={props.data.uid} />
         </div>
