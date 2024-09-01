@@ -28,15 +28,21 @@ export const handler = async (
 
 export default function Login(props: PageProps<Props>) {
   return (
-    <html className="bg-base-100">
-      <div className="flex flex-row min-h-screen justify-center items-center p-5">
-        <div className="card bg-base-200 w-96 shadow-xl">
-          <div className="card-body items-center text-center">
-            <img src="/logo.svg" className="w-16 h-16" />
-            <UsernamePassword uid={props.data.uid} />
-          </div>
+    <div className="min-h-screen bg-base-200 flex items-center p-2">
+      <div className="card bg-base-100 text-neutral mx-auto w-96 shadow-xl">
+        <div class="card-body items-center text-center">
+          <img
+            className="w-16 h-16 mx-auto"
+            src="/logo.svg"
+            width={64}
+            height={64}
+          />
+          <h2 className="card-title mb-2">
+            Welcome
+          </h2>
+          <UsernamePassword uid={props.data.uid} />
         </div>
       </div>
-    </html>
+    </div>
   );
 }

@@ -13,8 +13,8 @@ import * as $interactions_uid_index from "./routes/interactions/[uid]/index.tsx"
 import * as $interactions_uid_login from "./routes/interactions/[uid]/login.tsx";
 import * as $interactions_uid_trpc_path_ from "./routes/interactions/[uid]/trpc/[...path].ts";
 import * as $oidc_oidc_ from "./routes/oidc/[...oidc].ts";
-import * as $Counter from "./islands/Counter.tsx";
 import * as $interactions_UsernamePassword from "./islands/interactions/UsernamePassword.tsx";
+import * as $typography_ErrorText from "./islands/typography/ErrorText.tsx";
 import { type Manifest } from "$fresh/server.ts";
 
 const manifest = {
@@ -33,9 +33,9 @@ const manifest = {
     "./routes/oidc/[...oidc].ts": $oidc_oidc_,
   },
   islands: {
-    "./islands/Counter.tsx": $Counter,
     "./islands/interactions/UsernamePassword.tsx":
       $interactions_UsernamePassword,
+    "./islands/typography/ErrorText.tsx": $typography_ErrorText,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;
